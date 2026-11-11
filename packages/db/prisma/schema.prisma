@@ -1,0 +1,501 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Level {
+  UNSCREENED
+  BEGINNER
+  MID
+  ADVANCE
+}
+
+enum EnrollmentStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum TrackType {
+  CUSTOM
+  BUNDLE
+}
+
+enum CreditTxType {
+  TOPUP
+  DEBIT
+  REFUND
+  ADJUSTMENT
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  username             String?   @unique
+  isProfilePublic      Boolean   @default(true)
+  isAdmin              Boolean   @default(false)
+  level                Level     @default(UNSCREENED)
+  isPremium            Boolean   @default(false)
+  isPro                Boolean   @default(false)
+  xp                   Int       @default(0)
+  learningStyle        String? // READ_FIRST | CHUNK_QUIZ | CHALLENGE_FIRST
+  guidancePreference   String? // GUIDED | SEMI_GUIDED | INDEPENDENT
+  githubUsername       String?
+  githubRepoName       String?
+  githubAccessToken    String?
+  phone                String?
+  dateOfBirth          DateTime?
+  gender               String?
+  domisili             String?
+  pendidikan           String?
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  premiumExpiresAt     DateTime?
+  proExpiresAt         DateTime?
+
+  accounts                 Account[]
+  sessions                 Session[]
+  screeningResult          ScreeningResult?
+  enrollments              Enrollment[]
+  trackAssessments         TrackAssessment[]
+  streaks                  Streak[]
+  exercises                Exercise[]
+  testSubmissions          TestSubmission[]
+  aiUsages                 AIUsage[]
+  curricula                Track[]
+  topicQuizzes             TopicQuiz[]
+  codeReviews              CodeReview[]
+  promoRedemptions         PromoRedemption[]
+  moduleAssessmentAttempts ModuleAssessmentAttempt[]
+  materialFeedbacks        MaterialFeedback[]
+  creditBalance            CreditBalance?
+  creditTransactions       CreditTransaction[]
+  bundlePurchases          BundlePurchase[]
+  certificates             Certificate[]
+}
+
+model CodeReview {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  language  String
+  filename  String?
+  code      String   @db.Text
+  context   String?
+  summary   String   @db.Text
+  comments  Json
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model ScreeningResult {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  score       Int
+  level       Level
+  answers     Json
+  appealUsed  Boolean  @default(false)
+  completedAt DateTime @default(now())
+}
+
+model Track {
+  id             String            @id @default(cuid())
+  title          String
+  description    String
+  slug           String            @unique
+  icon           String?
+  order          Int?
+  isFree         Boolean           @default(false)
+  type           TrackType         @default(CUSTOM)
+  priceIdr       Int?
+  hasCertificate Boolean           @default(false)
+  publishedAt    DateTime?
+  userId         String?
+  user           User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal           String?
+  createdAt      DateTime          @default(now())
+  modules        Module[]
+  assessments    TrackAssessment[]
+  purchases      BundlePurchase[]
+  certificates   Certificate[]
+
+  @@index([userId])
+}
+
+model CreditBalance {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance   Int      @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model CreditTransaction {
+  id           String       @id @default(cuid())
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         CreditTxType
+  amount       Int
+  balanceAfter Int
+  action       String?
+  refId        String?
+  createdAt    DateTime     @default(now())
+
+  @@unique([type, refId])
+  @@index([userId, createdAt])
+}
+
+model CreditPackage {
+  id          String   @id @default(cuid())
+  label       String
+  description String?
+  credits     Int
+  priceIdr    Int
+  isActive    Boolean  @default(true)
+  order       Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isActive, order])
+}
+
+model BundlePurchase {
+  id                  String    @id @default(cuid())
+  userId              String
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackId             String
+  track               Track     @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  amountPaidIdr       Int
+  mayarTransactionId  String?
+  purchasedAt         DateTime  @default(now())
+  certificateIssuedAt DateTime?
+
+  @@unique([userId, trackId])
+  @@unique([mayarTransactionId])
+  @@index([trackId])
+}
+
+model Certificate {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackId       String
+  track         Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  issuedAt      DateTime @default(now())
+  certificateNo String   @unique
+
+  @@unique([userId, trackId])
+}
+
+model TrackAssessment {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackId     String
+  track       Track    @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  level       Level
+  completedAt DateTime @default(now())
+
+  @@unique([userId, trackId])
+}
+
+model Module {
+  id          String            @id @default(cuid())
+  trackId     String
+  track       Track             @relation(fields: [trackId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  order       Int
+  isFree      Boolean           @default(false)
+  topics      Topic[]
+  enrollments Enrollment[]
+  assessment  ModuleAssessment?
+
+  @@unique([trackId, order])
+  @@index([trackId])
+}
+
+model Topic {
+  id                String @id @default(cuid())
+  moduleId          String
+  module            Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  title             String
+  description       String
+  order             Int
+  learningObjective String
+
+  exercises          Exercise[]
+  generatedMaterials GeneratedMaterial[]
+  quizzes            TopicQuiz[]
+  materialFeedbacks  MaterialFeedback[]
+
+  @@unique([moduleId, order])
+}
+
+model GeneratedMaterial {
+  id            String   @id @default(cuid())
+  topicId       String
+  topic         Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  level         Level
+  learningStyle String   @default("READ_FIRST")
+  guidance      String   @default("GUIDED")
+  content       String   @db.Text
+  generatedBy   String?
+  hitCount      Int      @default(1)
+  createdAt     DateTime @default(now())
+
+  @@unique([topicId, level, learningStyle, guidance])
+}
+
+model Exercise {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topicId       String
+  topic         Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  prompt        String   @db.Text
+  requirements  Json
+  starterCode   Json?
+  level         Level
+  attemptNumber Int      @default(1)
+  passed        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  testSubmissions TestSubmission[]
+
+  @@index([userId, topicId])
+}
+
+model TestSubmission {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exerciseId      String
+  exercise        Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  code            String   @db.Text
+  language        String   @default("html")
+  score           Float?
+  funcScore       Float?
+  qualityScore    Float?
+  efficiencyScore Float?
+  feedback        String?  @db.Text
+  passed          Boolean  @default(false)
+  submittedAt     DateTime @default(now())
+
+  @@index([userId, exerciseId])
+}
+
+model Enrollment {
+  id          String           @id @default(cuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  moduleId    String
+  module      Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  status      EnrollmentStatus @default(IN_PROGRESS)
+  startedAt   DateTime         @default(now())
+  completedAt DateTime?
+
+  @@unique([userId, moduleId])
+}
+
+model Streak {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date
+
+  @@unique([userId, date])
+}
+
+model AIUsage {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date
+  count  Int      @default(0)
+
+  @@unique([userId, date])
+}
+
+model TopicQuiz {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topicId     String
+  topic       Topic     @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  questions   Json
+  attempt     Int       @default(1)
+  passed      Boolean   @default(false)
+  score       Int       @default(0)
+  total       Int       @default(0)
+  submittedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, topicId])
+  @@index([userId, passed])
+}
+
+// Auth.js required models
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+}
+
+enum PromoType {
+  PERCENT_OFF
+  AMOUNT_OFF
+  FREE_PLUS
+  FREE_PRO
+}
+
+enum PromoTarget {
+  ALL
+  CREDIT
+  BUNDLE
+}
+
+model PromoCode {
+  id              String            @id @default(cuid())
+  code            String            @unique
+  type            PromoType
+  target          PromoTarget       @default(ALL)
+  discountPercent Int?
+  discountAmount  Int?
+  minAmountIdr    Int?
+  maxDiscountIdr  Int?
+  creditPackageId String?
+  trackId         String?
+  maxUses         Int?
+  usedCount       Int               @default(0)
+  expiresAt       DateTime?
+  isActive        Boolean           @default(true)
+  description     String?
+  stripeCouponId  String?
+  createdAt       DateTime          @default(now())
+  redemptions     PromoRedemption[]
+
+  @@index([target, isActive])
+  @@index([creditPackageId])
+  @@index([trackId])
+}
+
+model PromoRedemption {
+  id                 String      @id @default(cuid())
+  promoCodeId        String
+  promoCode          PromoCode   @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  target             PromoTarget @default(ALL)
+  refId              String?
+  discountAmountIdr  Int         @default(0)
+  originalAmountIdr  Int         @default(0)
+  finalAmountIdr     Int         @default(0)
+  mayarTransactionId String?
+  redeemedAt         DateTime    @default(now())
+
+  @@unique([promoCodeId, userId])
+  @@unique([mayarTransactionId])
+  @@index([userId])
+  @@index([target, refId])
+}
+
+model ModuleAssessment {
+  id            String                    @id @default(cuid())
+  moduleId      String                    @unique
+  module        Module                    @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  quizQuestions Json
+  challenge     Json
+  createdAt     DateTime                  @default(now())
+  attempts      ModuleAssessmentAttempt[]
+}
+
+model ModuleAssessmentAttempt {
+  id                String           @id @default(cuid())
+  assessmentId      String
+  assessment        ModuleAssessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quizAnswers       Json?
+  quizScore         Int?
+  quizPassed        Boolean          @default(false)
+  challengeCode     String?          @db.Text
+  challengePassed   Boolean          @default(false)
+  challengeFeedback String?          @db.Text
+  passed            Boolean          @default(false)
+  createdAt         DateTime         @default(now())
+
+  @@index([assessmentId, userId])
+  @@index([userId])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+}
+
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model MaterialFeedback {
+  id        String   @id @default(cuid())
+  topicId   String
+  topic     Topic    @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String // WRONG_CONTENT | TYPO | TOO_EASY | TOO_HARD | OTHER
+  message   String?  @db.Text
+  status    String   @default("OPEN") // OPEN | RESOLVED
+  createdAt DateTime @default(now())
+
+  @@index([topicId])
+  @@index([status])
+}

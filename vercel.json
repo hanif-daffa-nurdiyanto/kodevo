@@ -1,0 +1,24 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/keep-alive",
+      "schedule": "0 0 */3 * *"
+    },
+    {
+      "path": "/api/cron/streak-reminder",
+      "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/win-back",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/cron/weekly-progress",
+      "schedule": "0 10 * * 0"
+    },
+    {
+      "path": "/api/cron/expire-premium",
+      "schedule": "0 1 * * *"
+    }
+  ]
+}

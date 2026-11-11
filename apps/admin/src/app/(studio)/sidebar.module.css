@@ -1,0 +1,15 @@
+/* Hover states — inline styles handle layout & colors, CSS module handles hover */
+
+.navLink:hover {
+  background-color: rgba(255, 255, 255, 0.07) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+.navLinkActive {
+  /* active styles are fully inline; this class kept for potential overrides */
+}
+
+.backLink:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.55) !important;
+}

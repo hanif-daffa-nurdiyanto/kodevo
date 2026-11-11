@@ -1,0 +1,14 @@
+{
+  "name": "@kodevo/email",
+  "version": "0.1.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "resend": "^6.12.4"
+  },
+  "devDependencies": {
+    "typescript": "^5"
+  }
+}

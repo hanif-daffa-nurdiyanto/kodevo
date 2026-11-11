@@ -1,0 +1,26 @@
+{
+  "name": "kodevo-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:web",
+    "dev:web": "npm run dev -w apps/web",
+    "dev:admin": "npm run dev -w apps/admin",
+    "build": "npm run build:web",
+    "build:web": "npm run build -w apps/web",
+    "build:admin": "npm run build -w apps/admin",
+    "start": "npm run start -w apps/web",
+    "lint": "npm run lint -w apps/web",
+    "db:generate": "npm run db:generate -w packages/db",
+    "db:migrate": "npm run db:migrate -w packages/db",
+    "db:push": "npm run db:push -w packages/db",
+    "db:seed": "npm run db:seed -w packages/db",
+    "db:seed:bundles": "npm run db:seed:bundles -w packages/db",
+    "db:studio": "npm run db:studio -w packages/db",
+    "deploy:admin": "npm run db:generate && npm run build:admin && mkdir -p apps/admin/.next/standalone/apps/admin/.next && cp -r apps/admin/.next/static apps/admin/.next/standalone/apps/admin/.next/static && cp -r apps/admin/public apps/admin/.next/standalone/apps/admin/public"
+  }
+}
